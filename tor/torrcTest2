@@ -1,0 +1,4 @@
+SocksPort 6065
+AvoidDiskWrites 1
+CookieAuthentication 1
+ClientTransportPlugin meek_lite,obfs2,obfs3,obfs4,scramblesuit exec PluggableTransports/obfs4proxy
