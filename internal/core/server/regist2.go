@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/rsa"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -98,6 +99,12 @@ func (s *Server) regist2Handler(w http.ResponseWriter, req *http.Request) {
 
 	err = contact.AddPubKey(s.storage, cr.Name, rid, pass, cr.PubKey)
 	if err != nil {
+		enc.Encode(allgood)
+		return
+	}
+
+	c, err := contact.Load(s.storage, binary.LittleEndian.Uint64(rid))
+	if err != nil || c.PubKey == nil || c.ReportedName != cr.Name {
 		enc.Encode(allgood)
 		return
 	}

@@ -311,13 +311,15 @@ func (db *db) LoadListFromId(table []byte, subtable []byte, id []byte) (map[uint
 	return list, err
 }
 
-func (db *db) LoadLast(table []byte, subtable []byte, count uint64) (map[uint64][]byte, error) {
+func (db *db) LoadLast(table []byte, subtable []byte, count uint64) (lst map[uint64][]byte,
+	startIndex uint64,
+	er error) {
 	if db.Err != nil {
-		return nil, db.Err
+		return nil, 0, db.Err
 	}
 
 	if db.hash == nil {
-		return nil, errors.New("password is not set")
+		return nil, 0, errors.New("password is not set")
 	}
 
 	list := make(map[uint64][]byte)
@@ -337,14 +339,14 @@ func (db *db) LoadLast(table []byte, subtable []byte, count uint64) (map[uint64]
 		if k == nil {
 			return errors.New("empty table")
 		}
-		start := binary.LittleEndian.Uint64(k)
-		if start > count {
-			start -= count
+		startIndex = binary.LittleEndian.Uint64(k)
+		if startIndex > count {
+			startIndex -= count
 		} else {
-			start = 0
+			startIndex = 1
 		}
 		startKey := make([]byte, 8)
-		binary.LittleEndian.PutUint64(startKey, start)
+		binary.LittleEndian.PutUint64(startKey, startIndex)
 		for k, v := cur.Seek(startKey); k != nil; k, v = cur.Next() {
 			elem, err := c.AESDecript(db.hash, v)
 			if err != nil {
@@ -355,7 +357,7 @@ func (db *db) LoadLast(table []byte, subtable []byte, count uint64) (map[uint64]
 		}
 		return nil
 	})
-	return list, err
+	return list, startIndex, err
 }
 
 func (db *db) GetMaxId(table []byte, subtable []byte) (uint64, error) {

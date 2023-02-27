@@ -20,7 +20,7 @@ type Storage interface {
 	CreateTable(table, subtable []byte) error
 	LoadList(table []byte, subtable []byte) (map[uint64][]byte, error)
 	LoadListFromId(table []byte, subtable []byte, id []byte) (map[uint64][]byte, error)
-	LoadLast(table []byte, subtable []byte, count uint64) (map[uint64][]byte, error)
+	LoadLast(table []byte, subtable []byte, count uint64) (lst map[uint64][]byte, startIndex uint64, er error)
 	GetMaxId(table []byte, subtable []byte) (uint64, error)
 }
 

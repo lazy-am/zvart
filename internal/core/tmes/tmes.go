@@ -15,7 +15,7 @@ type messageStorage interface {
 	CreateTable(table, subtable []byte) error
 	LoadList(table []byte, subtable []byte) (map[uint64][]byte, error)
 	LoadListFromId(table []byte, subtable []byte, id []byte) (map[uint64][]byte, error)
-	LoadLast(table []byte, subtable []byte, count uint64) (map[uint64][]byte, error)
+	LoadLast(table []byte, subtable []byte, count uint64) (lst map[uint64][]byte, startIndex uint64, er error)
 	GetMaxId(table []byte, subtable []byte) (uint64, error)
 }
 
@@ -120,16 +120,16 @@ func LoadList(db messageStorage, table []byte) ([]*TextMessage, error) {
 }
 
 func LoadLast(db messageStorage, table []byte, count uint64) ([]TextMessage, error) {
-	list, err := db.LoadLast([]byte(messTableName), table, count)
+	list, startIndex, err := db.LoadLast([]byte(messTableName), table, count)
 	if err != nil {
 		return nil, err
 	}
 	ml := []TextMessage{}
-	for k, bin := range list {
+	for i := startIndex; i < (uint64(len(list)) + startIndex); i++ {
 		var buf []byte = make([]byte, 8)
-		binary.LittleEndian.PutUint64(buf, k)
+		binary.LittleEndian.PutUint64(buf, i)
 		m := TextMessage{dbKey: buf}
-		if err := json.Unmarshal(bin, &m); err != nil {
+		if err := json.Unmarshal(list[i], &m); err != nil {
 			return nil, err
 		}
 		ml = append(ml, m)

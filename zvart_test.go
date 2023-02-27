@@ -18,7 +18,7 @@ import (
 	"github.com/lazy-am/zvart/pkg/service"
 )
 
-func TestApp(t *testing.T) {
+func TestZvart(t *testing.T) {
 
 	defer service.ClosingServices()
 
@@ -44,6 +44,13 @@ func TestApp(t *testing.T) {
 	torExe := "tor"
 	if runtime.GOOS == "windows" {
 		torExe = filepath.Join("tor", "tor", "tor.exe")
+	} else {
+		torExe = filepath.Join("tor", "tor", "tor")
+		abs, err := filepath.Abs(filepath.Join("tor", "tor"))
+		if err != nil {
+			t.Fatal("it was not possible to calculate the absolute path of the folder with shared libraries")
+		}
+		os.Setenv("LD_LIBRARY_PATH", abs)
 	}
 
 	var (

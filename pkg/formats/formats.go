@@ -12,5 +12,5 @@ func FormatTime(t *time.Time) string {
 }
 
 func FormatKey(k string) string {
-	return k[:5] + "..." + k[len(k)-5:]
+	return k[:3] + "." + k[len(k)-3:]
 }

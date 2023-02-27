@@ -189,15 +189,29 @@ func (w *Window) keybindings() error {
 	// 	return err
 	// }
 
-	// err = g.SetKeybinding("main", gocui.MouseWheelUp, gocui.ModNone, up)
-	// if err != nil {
-	// 	return err
-	// }
-	// err = g.SetKeybinding("main", gocui.MouseWheelDown, gocui.ModNone, down)
-	// if err != nil {
-	// 	return err
-	// }
+	err = w.G.SetKeybinding(mesListView, gocui.MouseWheelUp, gocui.ModNone, w.up)
+	if err != nil {
+		return err
+	}
+	err = w.G.SetKeybinding(mesListView, gocui.MouseWheelDown, gocui.ModNone, w.down)
+	if err != nil {
+		return err
+	}
 
+	return nil
+}
+
+func (w *Window) down(g *gocui.Gui, v *gocui.View) error {
+	v.Autoscroll = false
+	ox, oy := v.Origin()
+	v.SetOrigin(ox, oy+1)
+	return nil
+}
+
+func (w *Window) up(g *gocui.Gui, v *gocui.View) error {
+	v.Autoscroll = false
+	ox, oy := v.Origin()
+	v.SetOrigin(ox, oy-1)
 	return nil
 }
 
@@ -259,21 +273,22 @@ func (w *Window) printSelfInfo() {
 	}
 	var tordesc string
 	if app.Zvart.Tor.Connected {
-		tordesc = "connected"
+
+		tordesc = "\033[32;1mconnected\033[0m"
 	} else {
-		tordesc = "not connected"
+		tordesc = "\033[31;1mnot connected\033[0m"
 	}
 	var onidesc string
 	if app.Zvart.Tor.OnionConnected {
-		onidesc = "connected"
+		onidesc = "\033[32;1mconnected\033[0m"
 	} else {
-		onidesc = "not connected"
+		onidesc = "\033[31;1mnot connected\033[0m"
 	}
 	v, _ := w.G.View(aboutContactView)
 	v.Clear()
-	fmt.Fprintf(v, " You >> %s ID >> %s \n Public key >> %s \n Tor %s | Onion %s",
+	fmt.Fprintf(v, " %s >>> %s \n Part of public key >> %s \n Tor %s | Onion %s",
 		u.Name,
-		formats.FormatKey(string(id)),
+		id,
 		formats.FormatKey(base64.StdEncoding.EncodeToString(u.PrivKey.PublicKey.N.Bytes())),
 		tordesc,
 		onidesc)
@@ -283,43 +298,50 @@ func (w *Window) printAboutContact(c *contact.Contact) {
 
 	name := c.ReportedName
 	if name == "" {
-		name = "unknown"
+		name = "\033[31;1munknown\033[0m"
 	}
 
 	var key string
 	if c.PubKey == nil {
-		key = "not received"
+		key = "\033[31;1mnot received\033[0m"
 	} else {
 		key = formats.FormatKey(base64.StdEncoding.EncodeToString(c.PubKey.N.Bytes()))
 	}
 
 	v, _ := w.G.View(aboutContactView)
 	v.Clear()
-	fmt.Fprintf(v, " Contact >> %s | Created %s \n Key >> %s | ID >> %s (ctrl+j - copy) \n Last connection %s | Last try %s",
+	fmt.Fprintf(v, " Contact >> %s | Created %s \n Part of key >> %s | ID >> %s \n Last connection %s | Last try %s",
 		name,
 		formats.FormatTime(&c.CreationTime),
 		key,
-		formats.FormatKey(string(c.OnionID)),
+		c.OnionID,
 		formats.FormatTime(&c.LastCallTime),
 		formats.FormatTime(&c.LastTryTime))
 }
 
 func (w *Window) PrintAllMessages(c *contact.Contact) {
 	regist := ""
-	h1 := "\n -You cannot write messages to this contact until he/she replies to you "
+	h1 := ""
+	if c.PubKey == nil {
+		h1 = "\n -You cannot write messages to this contact until he/she replies to you \n"
+	} else {
+		h1 = "\n"
+	}
+
 	h2 := "\n -The connection has not yet been established."
-	h3 := "\n -Until you answer him, he can't write to you anymore. "
+	h3 := "\n -\033[33;1mUntil you answer him, he can't write to you anymore.\033[0m "
 	if c.CreatedByMe && c.PubKeySended {
-		regist = fmt.Sprintf("Added by you, message \"%s\" sent"+h1, c.HelloMessage)
+		regist = fmt.Sprintf("Added by you, \033[32;1mmessage \"%s\" sent\033[0m"+h1, c.HelloMessage)
 	} else if c.CreatedByMe && !c.PubKeySended {
-		regist = fmt.Sprintf("Added by you, but message \"%s\" has not yet sent"+h2, c.HelloMessage)
+		regist = fmt.Sprintf("Added by you, but \033[31;1mmessage \"%s\" has not yet sent\033[0m"+h2, c.HelloMessage)
 	} else if !c.CreatedByMe && !c.PubKeySended {
-		regist = fmt.Sprintf("Added from the network, message received \"%s\""+h3, c.HelloMessage)
+		regist = fmt.Sprintf("Added from the network, message received \"\033[33;1m%s\033[0m\""+h3, c.HelloMessage)
 	} else if !c.CreatedByMe && c.PubKeySended {
 		regist = fmt.Sprintf("Added from the network, with a message \"%s\"", c.HelloMessage)
 	}
 
 	v, _ := w.G.View(mesListView)
+	v.Autoscroll = true
 	v.Clear()
 	fmt.Fprint(v, " "+formats.FormatTime(&c.CreationTime)+"\n")
 	fmt.Fprint(v, " -"+regist+"\n")
@@ -338,7 +360,7 @@ func (w *Window) PrintAllMessages(c *contact.Contact) {
 		return
 	}
 	for _, m := range ml {
-		w.printMessage(&m)
+		w.printMessage(c, &m)
 	}
 
 }
@@ -360,8 +382,10 @@ func (w *Window) UpdateMessages(c *contact.Contact) {
 		if err != nil {
 			return
 		}
+		v, _ := w.G.View(mesListView)
+		v.Autoscroll = true
 		for _, m := range ml {
-			w.printMessage(m)
+			w.printMessage(c, m)
 		}
 		binary.LittleEndian.PutUint64(buf, max)
 		c.LastViewedMessageId = buf
@@ -369,10 +393,20 @@ func (w *Window) UpdateMessages(c *contact.Contact) {
 	}
 }
 
-func (w *Window) printMessage(m *tmes.TextMessage) {
+func (w *Window) printMessage(c *contact.Contact, m *tmes.TextMessage) {
 	v, _ := w.G.View(mesListView)
-	fmt.Fprint(v, " "+formats.FormatTime(&m.SendedTime)+"\n")
-	fmt.Fprint(v, " -"+m.Text+"\n")
+	if m.CreatedByMe {
+		if m.IsSended {
+			fmt.Fprint(v, " - You(\033[32;1mreceived\033[0m) - "+formats.FormatTime(&m.CreationTime)+"\n")
+		} else {
+			fmt.Fprint(v, " - You(\033[31;1mnot received\033[0m) - "+formats.FormatTime(&m.CreationTime)+"\n")
+		}
+	} else {
+		fmt.Fprint(v, " - "+c.ReportedName+" - "+formats.FormatTime(&m.CreationTime)+"\n")
+	}
+
+	fmt.Fprint(v, " - "+m.Text+"\n")
+	fmt.Fprint(v, " ------------- \n")
 }
 
 func (w *Window) printMessages(c *contact.Contact) {
@@ -388,7 +422,21 @@ func (w *Window) printHelpInMesList() {
 	w.oldPrintedContact = nil
 	v, _ := w.G.View(mesListView)
 	v.Clear()
-	fmt.Fprint(v, "Help help help")
+	fmt.Fprint(v, " Welcome to the world of anonymity\n")
+	fmt.Fprint(v, " This is one of the first builds of the program and you will meet a lot of bugs\n")
+	fmt.Fprint(v, " After the Tor is fully connected you will see a long link to your account\n")
+	fmt.Fprint(v, " You can copy this link to the clipboard by pressing \033[33;1mCTRL + I\033[0m\n")
+	fmt.Fprint(v, " Share this link with the people you want to talk to\n")
+	fmt.Fprint(v, " To add someone to your contact list, enter the following command in the input field below\n")
+	fmt.Fprint(v, " \033[33;1m:nc link <some hello message>\033[0m\n")
+	fmt.Fprint(v, " Where \"link\" is the same long link received from your friend\n")
+	fmt.Fprint(v, " To insert a link into the input box, use \033[33;1mCTRL + V\033[0m\n")
+	fmt.Fprint(v, " After entering the command you will have a \"contact\" \n")
+	fmt.Fprint(v, " And after a while your respondent will be notified\n")
+	fmt.Fprint(v, " He must write you back first\n")
+	fmt.Fprint(v, "\n You can help develop the program (translation, programming, donations)\n")
+	fmt.Fprint(v, " Visit \033[33;1mgithub.com/lazy-am/zvart\033[0m for details\n")
+	fmt.Fprint(v, " Mail \033[33;1mLazyOnPascal@proton.me\033[0m\n")
 }
 
 func (w *Window) rebuildContacts() {

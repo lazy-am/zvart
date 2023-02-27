@@ -2,6 +2,9 @@ package app
 
 import (
 	"net"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 
 	"github.com/lazy-am/zvart/internal/core/server"
@@ -56,6 +59,13 @@ func commonInit() error {
 	listener, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(flags.StartFlags.OnionPort))
 	if err != nil {
 		return err
+	}
+
+	if flags.StartFlags.UseLibPath && runtime.GOOS == "linux" {
+		abs, err := filepath.Abs(flags.StartFlags.LibPath)
+		if err == nil {
+			os.Setenv("LD_LIBRARY_PATH", abs)
+		}
 	}
 	//init tor
 	Zvart.Tor, err = torl.Init(int16(flags.StartFlags.ControlPort),
