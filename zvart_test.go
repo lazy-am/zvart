@@ -100,7 +100,7 @@ func TestZvart(t *testing.T) {
 		if err != nil {
 			t.Fatal("tor1 creation error " + err.Error())
 		}
-		_, err = server.Init(listener1, storage1, socksPort1)
+		_, err = server.Init(listener1, storage1, socksPort1, nil)
 		if err != nil {
 			t.Fatal("server1 creation error " + err.Error())
 		}
@@ -119,7 +119,7 @@ func TestZvart(t *testing.T) {
 		if err != nil {
 			t.Fatal("tor2 creation error " + err.Error())
 		}
-		_, err = server.Init(listener2, storage2, socksPort2)
+		_, err = server.Init(listener2, storage2, socksPort2, nil)
 		if err != nil {
 			t.Fatal("server2 creation error " + err.Error())
 		}

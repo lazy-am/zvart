@@ -61,6 +61,7 @@ type Contact struct {
 	//If any messages are unsent, the variable stores the index of the first one
 	FirstUnsentMessageId []byte
 	LastViewedMessageId  []byte
+	NeedUpdateGuiInfo    bool
 }
 
 func new(db contactStorage) (*Contact, error) {
@@ -220,11 +221,11 @@ func LoadList(db contactStorage) ([]*Contact, error) {
 		return nil, err
 	}
 	cl := []*Contact{}
-	for k, bin := range list {
+	for i := 1; i <= len(list); i++ {
 		var buf []byte = make([]byte, 8)
-		binary.LittleEndian.PutUint64(buf, k)
+		binary.LittleEndian.PutUint64(buf, uint64(i))
 		c := Contact{dbKey: buf}
-		if err := json.Unmarshal(bin, &c); err != nil {
+		if err := json.Unmarshal(list[uint64(i)], &c); err != nil {
 			return nil, err
 		}
 		cl = append(cl, &c)

@@ -19,6 +19,8 @@ require (
 
 require (
 	github.com/cretz/bine v0.2.0
+	github.com/hajimehoshi/go-mp3 v0.3.4
+	github.com/hajimehoshi/oto/v2 v2.3.1
 	go.etcd.io/bbolt v1.3.7
 	golang.design/x/clipboard v0.6.3
 )

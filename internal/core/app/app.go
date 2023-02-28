@@ -5,13 +5,14 @@ import (
 
 	"github.com/lazy-am/zvart/internal/core/contact"
 	"github.com/lazy-am/zvart/internal/core/server"
+	"github.com/lazy-am/zvart/internal/core/sound"
 	"github.com/lazy-am/zvart/internal/core/tmes"
 	"github.com/lazy-am/zvart/internal/storage"
 	"github.com/lazy-am/zvart/internal/torl"
 )
 
 const (
-	Version = "0.0.1 alpha"
+	Version = "0.0.2 alpha"
 )
 
 type app struct {
@@ -20,6 +21,7 @@ type app struct {
 	Server        *server.Server
 	Clipboard     bool
 	Notifications chan string
+	Sound         *sound.AppSound
 }
 
 var Zvart app

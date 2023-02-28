@@ -28,12 +28,13 @@ const (
 )
 
 type Window struct {
-	G                 *gocui.Gui
-	status            *status.Status
-	ctx               context.Context
-	concelF           context.CancelFunc
-	activeContact     int
-	oldPrintedContact *contact.Contact
+	G                   *gocui.Gui
+	status              *status.Status
+	ctx                 context.Context
+	concelF             context.CancelFunc
+	activeContact       int
+	oldPrintedContact   *contact.Contact
+	standartHelpPrinted bool
 }
 
 func (w *Window) Init() {
@@ -52,7 +53,7 @@ func (w *Window) Init() {
 
 func (w *Window) layout(g *gocui.Gui) error {
 
-	const contactsX = 15
+	const contactsX = 20
 
 	maxX, maxY := g.Size()
 
@@ -159,6 +160,14 @@ func (w *Window) keybindings() error {
 		return err
 	}
 
+	err = w.G.SetKeybinding(mesEditView,
+		gocui.KeyCtrlTilde,
+		gocui.ModNone,
+		w.clearActiveContact)
+	if err != nil {
+		return err
+	}
+
 	if err := w.G.SetKeybinding(contactListView,
 		gocui.MouseLeft,
 		gocui.ModNone,
@@ -220,17 +229,27 @@ func (w *Window) sendClick(g *gocui.Gui, v *gocui.View) error {
 	w.G.Update(func(g2 *gocui.Gui) error {
 
 		edit, _ := g2.View(mesEditView)
-		if len(edit.BufferLines()) == 0 {
+		lines := edit.BufferLines()
+
+		if len(lines) == 0 {
 			return nil
 		}
 
-		if fs := edit.BufferLines()[0]; fs[0] == ':' && len(edit.BufferLines()) == 1 {
+		finalLines := []string{}
+		for _, l := range lines {
+			if l == "" {
+				l = "\n"
+			}
+			finalLines = append(finalLines, l)
+		}
+
+		if fs := finalLines[0]; fs[0] == ':' && len(finalLines) == 1 {
 			app.CmdDecode(fs)
 		} else {
-			if w.activeContact < 0 {
+			if w.activeContact == -1 {
 				return nil
 			}
-			app.Zvart.SendTextTo(uint64(w.activeContact), edit.BufferLines())
+			app.Zvart.SendTextTo(uint64(w.activeContact), finalLines)
 		}
 
 		edit.Clear()
@@ -238,6 +257,12 @@ func (w *Window) sendClick(g *gocui.Gui, v *gocui.View) error {
 		return nil
 
 	})
+	return nil
+}
+
+func (w *Window) clearActiveContact(g *gocui.Gui, v *gocui.View) error {
+	w.status.Set(" Back to home screen", 10)
+	w.activeContact = -1
 	return nil
 }
 
@@ -341,6 +366,7 @@ func (w *Window) PrintAllMessages(c *contact.Contact) {
 	}
 
 	v, _ := w.G.View(mesListView)
+	v.SetOrigin(0, 0)
 	v.Autoscroll = true
 	v.Clear()
 	fmt.Fprint(v, " "+formats.FormatTime(&c.CreationTime)+"\n")
@@ -397,12 +423,12 @@ func (w *Window) printMessage(c *contact.Contact, m *tmes.TextMessage) {
 	v, _ := w.G.View(mesListView)
 	if m.CreatedByMe {
 		if m.IsSended {
-			fmt.Fprint(v, " - You(\033[32;1mreceived\033[0m) - "+formats.FormatTime(&m.CreationTime)+"\n")
+			fmt.Fprint(v, " - \033[33;1mYou\033[0m(\033[32;1mreceived\033[0m) - "+formats.FormatTime(&m.CreationTime)+"\n")
 		} else {
-			fmt.Fprint(v, " - You(\033[31;1mnot received\033[0m) - "+formats.FormatTime(&m.CreationTime)+"\n")
+			fmt.Fprint(v, " - \033[33;1mYou\033[0m(\033[31;1mnot received\033[0m) - "+formats.FormatTime(&m.CreationTime)+"\n")
 		}
 	} else {
-		fmt.Fprint(v, " - "+c.ReportedName+" - "+formats.FormatTime(&m.CreationTime)+"\n")
+		fmt.Fprint(v, " - \033[33;1m"+c.ReportedName+"\033[0m - "+formats.FormatTime(&m.CreationTime)+"\n")
 	}
 
 	fmt.Fprint(v, " - "+m.Text+"\n")
@@ -410,7 +436,12 @@ func (w *Window) printMessage(c *contact.Contact, m *tmes.TextMessage) {
 }
 
 func (w *Window) printMessages(c *contact.Contact) {
-	if !c.Equal(w.oldPrintedContact) {
+	if c.NeedUpdateGuiInfo || !c.Equal(w.oldPrintedContact) {
+		if c.NeedUpdateGuiInfo {
+			c.NeedUpdateGuiInfo = false
+			c.Save(app.Zvart.Db)
+			app.Zvart.Sound.PlaySound2()
+		}
 		w.PrintAllMessages(c)
 		w.oldPrintedContact = c
 	} else {
@@ -419,9 +450,15 @@ func (w *Window) printMessages(c *contact.Contact) {
 }
 
 func (w *Window) printHelpInMesList() {
+	if w.standartHelpPrinted {
+		return
+	}
+	w.standartHelpPrinted = true
 	w.oldPrintedContact = nil
 	v, _ := w.G.View(mesListView)
+	v.SetOrigin(0, 0)
 	v.Clear()
+	v.Autoscroll = false
 	fmt.Fprint(v, " Welcome to the world of anonymity\n")
 	fmt.Fprint(v, " This is one of the first builds of the program and you will meet a lot of bugs\n")
 	fmt.Fprint(v, " After the Tor is fully connected you will see a long link to your account\n")
@@ -437,6 +474,9 @@ func (w *Window) printHelpInMesList() {
 	fmt.Fprint(v, "\n You can help develop the program (translation, programming, donations)\n")
 	fmt.Fprint(v, " Visit \033[33;1mgithub.com/lazy-am/zvart\033[0m for details\n")
 	fmt.Fprint(v, " Mail \033[33;1mLazyOnPascal@proton.me\033[0m\n")
+	fmt.Fprint(v, " --Keyboard shortcuts--\n")
+	fmt.Fprint(v, " \033[33;1mCTRL + Tilde\033[0m Exit from the chat room and return to the this screen\n")
+	fmt.Fprint(v, " \033[33;1mCTRL + Q\033[0m Program exit\n")
 }
 
 func (w *Window) rebuildContacts() {
@@ -449,6 +489,7 @@ func (w *Window) rebuildContacts() {
 	w.G.Update(func(g2 *gocui.Gui) error {
 
 		if len(cl) >= w.activeContact && (w.activeContact != -1) {
+			w.standartHelpPrinted = false
 			w.printAboutContact(cl[w.activeContact-1])
 			w.printMessages(cl[w.activeContact-1])
 		} else {
@@ -460,11 +501,24 @@ func (w *Window) rebuildContacts() {
 		v.Clear()
 
 		for _, c := range cl {
+
 			cline := c.ReportedName
 			if cline == "" {
 				cline = string(c.OnionID)
 			}
-			fmt.Fprint(v, " "+cline)
+
+			mescount, err := tmes.GetMaxId(app.Zvart.Db, c.DbMessagesTableName)
+			if err != nil {
+				return err
+			}
+			viewed := binary.LittleEndian.Uint64(c.LastViewedMessageId)
+			if viewed < mescount {
+				fmt.Fprintf(v, " "+cline+"(\033[31;1m%d\033[0m)\n", mescount-viewed)
+			} else {
+				fmt.Fprint(v, " "+cline+"\n")
+			}
+			//сравнить с c.LastViewedMessageId
+			//если сообщений больше то показать цифру непрочитанных сообщений
 		}
 
 		return nil

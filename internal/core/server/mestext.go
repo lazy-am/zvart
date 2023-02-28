@@ -98,6 +98,7 @@ func (s *Server) sendMessages(c *contact.Contact) error {
 				}
 			}
 			c.FirstUnsentMessageId = nil
+			c.NeedUpdateGuiInfo = true
 		}
 	}
 
@@ -143,6 +144,8 @@ func (s *Server) textmesHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
+
+	s.SoundMessagePlay()
 
 	allgood = true
 	enc.Encode(allgood)

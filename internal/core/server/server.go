@@ -15,6 +15,10 @@ const (
 	secBetweenConnectionAttempts = 20
 )
 
+type SoundPlay interface {
+	PlaySound1()
+}
+
 type Server struct {
 	listener   net.Listener
 	errChan    chan error
@@ -22,10 +26,12 @@ type Server struct {
 	cancelFunc context.CancelFunc
 	storage    storage.Storage
 	socksPort  uint16
+	player     SoundPlay
 }
 
-func Init(l net.Listener, db storage.Storage, socksPort uint16) (*Server, error) {
+func Init(l net.Listener, db storage.Storage, socksPort uint16, sound SoundPlay) (*Server, error) {
 	s := Server{errChan: make(chan error, 1), listener: l, storage: db, socksPort: socksPort}
+	s.player = sound
 	s.ctx, s.cancelFunc = context.WithCancel(context.Background())
 	s.resetWork()
 
@@ -33,6 +39,12 @@ func Init(l net.Listener, db storage.Storage, socksPort uint16) (*Server, error)
 	go s.ioutgoingConnections()
 	service.AddService(&s)
 	return &s, nil
+}
+
+func (s *Server) SoundMessagePlay() {
+	if s.player != nil {
+		s.player.PlaySound1()
+	}
 }
 
 func (s *Server) Close() {

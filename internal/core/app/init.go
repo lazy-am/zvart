@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/lazy-am/zvart/internal/core/server"
+	"github.com/lazy-am/zvart/internal/core/sound"
 	"github.com/lazy-am/zvart/internal/core/starter/flags"
 	"github.com/lazy-am/zvart/internal/core/user"
 	"github.com/lazy-am/zvart/internal/storage"
@@ -56,6 +57,10 @@ func InitForNewUser(name, pass string) error {
 }
 
 func commonInit() error {
+
+	Zvart.Sound, _ = sound.Init(filepath.Join("sounds", "notification-sound-7062.mp3"),
+		filepath.Join("sounds", "stop-13692.mp3"))
+
 	listener, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(flags.StartFlags.OnionPort))
 	if err != nil {
 		return err
@@ -78,7 +83,7 @@ func commonInit() error {
 		return err
 	}
 
-	Zvart.Server, err = server.Init(listener, Zvart.Db, uint16(flags.StartFlags.SocksPort))
+	Zvart.Server, err = server.Init(listener, Zvart.Db, uint16(flags.StartFlags.SocksPort), Zvart.Sound)
 	if err != nil {
 		return err
 	}
