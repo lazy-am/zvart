@@ -72,3 +72,4 @@ Instead of symbols `<>` insert a link (directly in the program use `CTRL + V` to
 ## Contacts
 
 * Mail LazyOnPascal@proton.me
+* Zvart shpqlr3cit4svvkvpsyoinfwc32y2jdwbq2jdfrccxtlcwresn63jaid
