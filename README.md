@@ -17,7 +17,7 @@ Weak optimization of the database and network. Weak resistance to attacks.
 
 ### Roadmap
 
-* Add sound effects to chat events
+* ~~Add sound effects to chat events~~
 * Make a multilingual interface
 * Work through the basic design of the console
 * Working via i2p in addition to tor
