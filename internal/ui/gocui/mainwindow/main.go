@@ -509,7 +509,7 @@ func (w *Window) rebuildContacts() {
 
 			mescount, err := tmes.GetMaxId(app.Zvart.Db, c.DbMessagesTableName)
 			if err != nil {
-				return err
+				mescount = 0
 			}
 			viewed := binary.LittleEndian.Uint64(c.LastViewedMessageId)
 			if viewed < mescount {
