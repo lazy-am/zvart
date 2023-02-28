@@ -15,12 +15,21 @@ The program is in the first alpha version. The protocol of exchange between clie
 and the protocol of storing information in the database is likely to change.
 Weak optimization of the database and network. Weak resistance to attacks.
 
+### Roadmap
+
+* Add sound effects to chat events
+* Make a multilingual interface
+* Work through the basic design of the console
+* Implement "channels." Informational chats in which only the author can write.
+* Implement auto-updating
+* Make an alternative user interface in the browser
+
 ## Getting Started
 
 ### Installing
 
 Download and unpack the program build.
-Run file `zvart.exe` on Windows and file `zvart` on Linux.
+Run `zvart.exe` on Windows and `zvart` on Linux.
 
 ### Tor setup
 
@@ -52,3 +61,13 @@ If you know someone's link, you can create a contact by typing
 ```
 
 Instead of symbols `<>` insert a link (directly in the program use `CTRL + V` to paste from the clipboard), and instead of the word `message` you can write some kind of greeting. Then a contact will be created and an attempt will be made to connect to that account. After receiving a notification that you want to add him/her to your contact sheet, the person must reply to you with any message - this will complete the process of mutual connection and you can correspond. You will not be able to write to him/her again until he/she replies to you.
+
+## How to help
+
+* Translation - if you see errors in the translation of the interface or want to help translate the program into your language, then contact me in any way
+* Programming - help with fixes and implementation of new features
+* Promotion - if you like the idea of the program - share this program on social media.
+
+## Contacts
+
+* Mail LazyOnPascal@proton.me
