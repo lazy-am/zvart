@@ -42,15 +42,30 @@ func (s *Server) sendMessages(c *contact.Contact) error {
 	}()
 
 	//If the public key is not sent, send
-	c, err = s.sendPubKey(c)
-	if err != nil {
-		return err
+	if !c.PubKeySended {
+		err = s.sendPubKey(c)
+		if err != nil {
+			return err
+		}
+		//reload contact
+		c, err = contact.Load(s.storage, binary.LittleEndian.Uint64(c.GetDBkey()))
+		if err != nil {
+			return err
+		}
 	}
 
 	//If there is no session key or it has expired, then set
-	c, err = s.checkSessionKey(c)
-	if err != nil {
-		return err
+	generated := c.CheckSesKey(s.storage)
+	if generated {
+		err := s.sendSesKey(c)
+		if err != nil {
+			return err
+		}
+		//reload contact
+		c, err = contact.Load(s.storage, binary.LittleEndian.Uint64(c.GetDBkey()))
+		if err != nil {
+			return err
+		}
 	}
 
 	ml, err := tmes.LoadListFromId(s.storage, c.DbMessagesTableName, c.FirstUnsentMessageId)

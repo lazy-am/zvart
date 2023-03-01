@@ -25,53 +25,53 @@ type continuingRegistration struct {
 	PubKey   *rsa.PublicKey
 }
 
-func (s *Server) sendPubKey(c *contact.Contact) (*contact.Contact, error) {
+func (s *Server) sendPubKey(c *contact.Contact) error {
 
 	u, err := user.Load(s.storage)
 	if err != nil {
-		return nil, err
-	}
-
-	if c.PubKeySended {
-		return c, nil
+		return err
 	}
 	if c.PubKey != nil {
 		cr := continuingRegistration{PubKey: &u.PrivKey.PublicKey, Name: u.Name}
 		cr.Pass, err = cipher.RSAEncrypt(c.SecretPass, c.PubKey)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		cr.RemoteId, err = cipher.RSAEncrypt(c.GetDBkey(), c.PubKey)
+		cr.RemoteId, err = cipher.RSAEncrypt(c.RemoteId, c.PubKey)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		js, err := json.Marshal(cr)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		c.LastTryTime = time.Now()
 		c.Save(s.storage)
 		res, err := socks5.SendViaTor(s.socksPort,
 			c.OnionID, 80, contregistAddress, js)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		c, err = contact.Load(s.storage, binary.LittleEndian.Uint64(c.GetDBkey()))
 		if err != nil {
-			return nil, err
+			return err
 		}
 		var allgood bool
 		if err := json.Unmarshal([]byte(res), &allgood); err == nil {
 			c.LastCallTime = time.Now()
 			if allgood {
 				c.PubKeySended = true
+				c.Save(s.storage)
+				return nil
+			} else {
+				c.Save(s.storage)
+				return errors.New("failed attempt to send a key")
 			}
-			c.Save(s.storage)
 		}
 	} else {
-		return nil, errors.New("the public key is not known")
+		return errors.New("the public key is not known")
 	}
-	return c, nil
+	return nil
 }
 
 func (s *Server) regist2Handler(w http.ResponseWriter, req *http.Request) {
@@ -110,15 +110,17 @@ func (s *Server) regist2Handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	time.Sleep(time.Millisecond * 200)
+
+	c, err := contact.Load(s.storage, binary.LittleEndian.Uint64(rid))
+	if err != nil || c.PubKey == nil || c.ReportedName != cr.Name {
+		enc.Encode(allgood)
+		return
+	}
+
 	if s.player != nil {
 		s.player.PlaySound1()
 	}
-
-	// c, err := contact.Load(s.storage, binary.LittleEndian.Uint64(rid))
-	// if err != nil || c.PubKey == nil || c.ReportedName != cr.Name {
-	// 	enc.Encode(allgood)
-	// 	return
-	// }
 
 	allgood = true
 	enc.Encode(allgood)
