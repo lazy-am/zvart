@@ -35,7 +35,7 @@ type Contact struct {
 	SessionKey []byte
 	SesKeyTime time.Time
 	//the app already works with this contact
-	InWork bool
+	ServerWork bool
 	//
 	RemoteId []byte
 	//
@@ -152,7 +152,7 @@ func NewAccepted(db contactStorage,
 	}
 
 	for _, c := range cl {
-		if bytes.Equal(c.OnionID, onionID) || c.PubKey.Equal(pubKey) {
+		if bytes.Equal(c.OnionID, onionID) || ((c.PubKey != nil) && c.PubKey.Equal(pubKey)) {
 			return nil, errors.New("contact already exists")
 		}
 	}

@@ -28,22 +28,27 @@ type encryptedRequest struct {
 }
 
 func (s *Server) sendMessages(c *contact.Contact) error {
-	c.InWork = true
+	//reload contact
+	c, err := contact.Load(s.storage, binary.LittleEndian.Uint64(c.GetDBkey()))
+	if err != nil {
+		return err
+	}
+	c.ServerWork = true
 	c.Save(s.storage)
 
 	defer func() {
-		c.InWork = false
+		c.ServerWork = false
 		c.Save(s.storage)
 	}()
 
 	//If the public key is not sent, send
-	err := s.sendPubKey(c)
+	c, err = s.sendPubKey(c)
 	if err != nil {
 		return err
 	}
 
 	//If there is no session key or it has expired, then set
-	err = s.checkSessionKey(c)
+	c, err = s.checkSessionKey(c)
 	if err != nil {
 		return err
 	}
@@ -80,8 +85,13 @@ func (s *Server) sendMessages(c *contact.Contact) error {
 	}
 
 	c.LastTryTime = time.Now()
+	c.Save(s.storage)
 	res, err := socks5.SendViaTor(s.socksPort,
 		c.OnionID, 80, textmessageAddress, jreq)
+	if err != nil {
+		return err
+	}
+	c, err = contact.Load(s.storage, binary.LittleEndian.Uint64(c.GetDBkey()))
 	if err != nil {
 		return err
 	}
@@ -97,7 +107,18 @@ func (s *Server) sendMessages(c *contact.Contact) error {
 					m.Save(s.storage)
 				}
 			}
+			//
+			ml, err = tmes.LoadListFromId(s.storage, c.DbMessagesTableName, c.FirstUnsentMessageId)
+			if err != nil {
+				return err
+			}
 			c.FirstUnsentMessageId = nil
+			for _, m := range ml {
+				if m.CreatedByMe && !m.IsSended {
+					c.FirstUnsentMessageId = m.GetDBkey()
+					break
+				}
+			}
 			c.NeedUpdateGuiInfo = true
 		}
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	Version = "0.0.2 alpha"
+	Version = "0.0.3 alpha"
 )
 
 type app struct {
@@ -35,14 +35,14 @@ func (a *app) AddNewContact(link, himessage string) {
 }
 
 func (a *app) SendTextTo(index uint64, mes []string) {
+	text := ""
+	for _, s := range mes {
+		text += s
+	}
 	c, err := contact.Load(a.Db, index)
 	if err != nil {
 		a.Notifications <- err.Error()
 		return
-	}
-	text := ""
-	for _, s := range mes {
-		text += s
 	}
 	m, err := tmes.Create(a.Db, c.DbMessagesTableName, text)
 	if err != nil {

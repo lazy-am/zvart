@@ -378,8 +378,14 @@ func (w *Window) PrintAllMessages(c *contact.Contact) {
 	}
 	buf := make([]byte, 8)
 	binary.LittleEndian.PutUint64(buf, max)
+	// reload and save contact
+	c, err = contact.Load(app.Zvart.Db, binary.LittleEndian.Uint64(c.GetDBkey()))
+	if err != nil {
+		return
+	}
 	c.LastViewedMessageId = buf
 	c.Save(app.Zvart.Db)
+	//
 
 	ml, err := tmes.LoadLast(app.Zvart.Db, c.DbMessagesTableName, onStartLoadMessageNumber)
 	if err != nil {
@@ -414,8 +420,14 @@ func (w *Window) UpdateMessages(c *contact.Contact) {
 			w.printMessage(c, m)
 		}
 		binary.LittleEndian.PutUint64(buf, max)
+		// reload and save contact
+		c, err = contact.Load(app.Zvart.Db, binary.LittleEndian.Uint64(c.GetDBkey()))
+		if err != nil {
+			return
+		}
 		c.LastViewedMessageId = buf
 		c.Save(app.Zvart.Db)
+		//
 	}
 }
 
@@ -438,8 +450,14 @@ func (w *Window) printMessage(c *contact.Contact, m *tmes.TextMessage) {
 func (w *Window) printMessages(c *contact.Contact) {
 	if c.NeedUpdateGuiInfo || !c.Equal(w.oldPrintedContact) {
 		if c.NeedUpdateGuiInfo {
+			// reload and save contact
+			c, err := contact.Load(app.Zvart.Db, binary.LittleEndian.Uint64(c.GetDBkey()))
+			if err != nil {
+				return
+			}
 			c.NeedUpdateGuiInfo = false
 			c.Save(app.Zvart.Db)
+			//
 			app.Zvart.Sound.PlaySound2()
 		}
 		w.PrintAllMessages(c)

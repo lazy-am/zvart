@@ -71,7 +71,7 @@ func (s *Server) checkContacts() {
 		return
 	}
 	for _, c := range cl {
-		if c.InWork {
+		if c.ServerWork {
 			continue
 		}
 		if c.CreatedByMe &&
@@ -94,8 +94,8 @@ func (s *Server) resetWork() {
 		return
 	}
 	for _, c := range cl {
-		if c.InWork {
-			c.InWork = false
+		if c.ServerWork {
+			c.ServerWork = false
 			c.Save(s.storage)
 		}
 	}

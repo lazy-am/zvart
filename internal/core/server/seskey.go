@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -22,15 +23,15 @@ type sessionKeySetUpRequest struct {
 	SesKey   []byte
 }
 
-func (s *Server) checkSessionKey(c *contact.Contact) error {
+func (s *Server) checkSessionKey(c *contact.Contact) (*contact.Contact, error) {
 	generated := c.CheckSesKey(s.storage)
 	if generated {
 		return s.sendSesKey(c)
 	}
-	return nil
+	return c, nil
 }
 
-func (s *Server) sendSesKey(c *contact.Contact) error {
+func (s *Server) sendSesKey(c *contact.Contact) (*contact.Contact, error) {
 
 	sksr := sessionKeySetUpRequest{RemoteId: c.RemoteId,
 		Pass:   c.SecretPass,
@@ -38,34 +39,39 @@ func (s *Server) sendSesKey(c *contact.Contact) error {
 
 	js, err := json.Marshal(sksr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	enc, err := cipher.RSAEncrypt(js, c.PubKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	js2, err := json.Marshal(enc)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	c.LastTryTime = time.Now()
+	c.Save(s.storage)
 	res, err := socks5.SendViaTor(s.socksPort,
 		c.OnionID, 80, seskeyAddress, js2)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	c, err = contact.Load(s.storage, binary.LittleEndian.Uint64(c.GetDBkey()))
+	if err != nil {
+		return nil, err
 	}
 	allgood := false
 	if err := json.Unmarshal([]byte(res), &allgood); err != nil {
-		return err
+		return nil, err
 	}
 	c.LastCallTime = time.Now()
 	if allgood {
-		return nil
+		return c, nil
 	}
-	return errors.New("rebuttal")
+	return nil, errors.New("rebuttal")
 }
 
 func (s *Server) sesKeyHandler(w http.ResponseWriter, req *http.Request) {

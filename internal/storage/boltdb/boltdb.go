@@ -27,7 +27,7 @@ type db struct {
 
 func InitBoltFile(fn string) (*db, error) {
 	b := db{Path: fn}
-	db, err := bolt.Open(fn, 0600, &bolt.Options{Timeout: 1 * time.Second})
+	db, err := bolt.Open(fn, 0600, &bolt.Options{Timeout: 10 * time.Second})
 	if err != nil {
 		b.Err = err
 		return nil, err
