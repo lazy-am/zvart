@@ -74,7 +74,7 @@ At the first start-up, specify a name and password.
 
 ### How to contact someone in this program
 
-After starting and connecting of tor (the two captions above will turn green) press `CTRL + I` . The link to your account will be copied to your computer's clipboard. You can share this link with your friends or get their link
+After starting and connecting of tor (the two captions above will turn green) press `CTRL + I` . The link to your account will be copied to your computer's clipboard. You can share this link with your friends.
 
 ### Contact creation
 
@@ -84,7 +84,7 @@ If you know someone's link, you can create a contact by typing
 :nc <> message
 ```
 
-Instead of symbols `<>` insert a link (directly in the program use `CTRL + V` to paste from the clipboard), and instead of the word `message` you can write some kind of greeting. Then a contact will be created and an attempt will be made to connect to that account. After receiving a notification that you want to add him/her to your contact sheet, the person must reply to you with any message - this will complete the process of mutual connection and you can correspond. You will not be able to write to him/her again until he/she replies to you.
+Instead of symbols `<>` insert a link (directly in the program use `CTRL + V` to paste from the clipboard), and instead of the word `message` you can write some kind of greeting. Then a contact will be created and an attempt will be made to connect to that account. After receiving a notification that you want to add him/her to your contact sheet, the person must reply to you with any message - this will complete the process of mutual connection and you can chatting.
 
 ### Console shortcuts
 * `Сtrl + Q` - exit the program
