@@ -5,7 +5,7 @@ zvart
 
 ## Idea
 
-Create an easy-to-use tool that allows you use the tor network (and hopefully i2p) for private chatting
+Create an easy-to-use tool to use the tor network (and hopefully i2p) for private, decentralized chatting
 
 ## Why is this needed?
 
@@ -89,7 +89,7 @@ Instead of symbols `<>` insert a link (directly in the program use `CTRL + V` to
 ### Console shortcuts
 * `Сtrl + Q` - exit the program
 * `Ctrl + Tilde` - exit the selected chat
-* `Ctrl + I` - copy your Tor host to the clipboard
+* `Ctrl + I` - copy your Tor link to the clipboard
 * `Ctrl + V` - paste information from the clipboard into the entry field
 * `Mouse wheel` - scroll the chat
 * `Mouse click on a contact` - select the chat
