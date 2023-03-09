@@ -119,12 +119,12 @@ func LoadList(db messageStorage, table []byte) ([]*TextMessage, error) {
 
 }
 
-func LoadLast(db messageStorage, table []byte, count uint64) ([]TextMessage, error) {
+func LoadLast(db messageStorage, table []byte, count uint64) ([]*TextMessage, error) {
 	list, startIndex, err := db.LoadLast([]byte(messTableName), table, count)
 	if err != nil {
 		return nil, err
 	}
-	ml := []TextMessage{}
+	ml := []*TextMessage{}
 	for i := startIndex; i < (uint64(len(list)) + startIndex); i++ {
 		var buf []byte = make([]byte, 8)
 		binary.LittleEndian.PutUint64(buf, i)
@@ -132,7 +132,7 @@ func LoadLast(db messageStorage, table []byte, count uint64) ([]TextMessage, err
 		if err := json.Unmarshal(list[i], &m); err != nil {
 			return nil, err
 		}
-		ml = append(ml, m)
+		ml = append(ml, &m)
 	}
 	return ml, nil
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jroimartin/gocui"
@@ -130,10 +131,19 @@ func (w *Window) keybindings() error {
 			if app.Zvart.Clipboard {
 				b := string(clipboard.Read(clipboard.FmtText))
 				if len(b) > 0 {
+					text := strings.Replace(b, "\r\n", "\n", -1)
 					edit, _ := w.G.View(mesEditView)
-					fmt.Fprint(edit, b)
-					x, _ := edit.Cursor()
-					edit.SetCursor(len(b)+x, 0)
+					fmt.Fprint(edit, text)
+					x, y := edit.Cursor()
+					strCount := strings.Count(text, "\n")
+					lastEndString := strings.LastIndex(text, "\n")
+					var xDelta int
+					if lastEndString == -1 {
+						xDelta = len(text) + x
+					} else {
+						xDelta = len(text) - (lastEndString + 1)
+					}
+					edit.SetCursor(xDelta, y+strCount)
 					w.status.Set("The text from the clipboard is copied to the input field", 10)
 				} else {
 					w.status.Set("Nothing on the clipboard", 10)
@@ -391,8 +401,12 @@ func (w *Window) PrintAllMessages(c *contact.Contact) {
 	if err != nil {
 		return
 	}
-	for _, m := range ml {
-		w.printMessage(c, &m)
+	for i, m := range ml {
+		if i >= 1 && m.CreationTime.Day() == ml[i-1].CreationTime.Day() {
+			w.printMessage(c, m, false)
+		} else {
+			w.printMessage(c, m, true)
+		}
 	}
 
 }
@@ -407,44 +421,43 @@ func (w *Window) UpdateMessages(c *contact.Contact) {
 	}
 
 	if viewed < max {
-		viewed++
-		buf := make([]byte, 8)
-		binary.LittleEndian.PutUint64(buf, viewed)
-		ml, err := tmes.LoadListFromId(app.Zvart.Db, c.DbMessagesTableName, buf)
-		if err != nil {
-			return
-		}
-		v, _ := w.G.View(mesListView)
-		v.Autoscroll = true
-		for _, m := range ml {
-			w.printMessage(c, m)
-		}
-		binary.LittleEndian.PutUint64(buf, max)
-		// reload and save contact
-		c, err = contact.Load(app.Zvart.Db, binary.LittleEndian.Uint64(c.GetDBkey()))
-		if err != nil {
-			return
-		}
-		c.LastViewedMessageId = buf
-		c.Save(app.Zvart.Db)
-		//
+		w.PrintAllMessages(c)
 	}
 }
 
-func (w *Window) printMessage(c *contact.Contact, m *tmes.TextMessage) {
+func (w *Window) printMessage(c *contact.Contact, m *tmes.TextMessage, longDate bool) {
+	var (
+		date    string
+		t       *time.Time
+		recText string
+	)
+	if m.CreatedByMe {
+		t = &m.CreationTime
+	} else {
+		t = &m.SendedTime
+	}
+	if longDate {
+		date = formats.FormatTime(t)
+	} else {
+		date = formats.FormatTimeShort(t)
+	}
 	v, _ := w.G.View(mesListView)
 	if m.CreatedByMe {
 		if m.IsSended {
-			fmt.Fprint(v, " - \033[33;1mYou\033[0m(\033[32;1mreceived\033[0m) - "+formats.FormatTime(&m.CreationTime)+"\n")
+			recText = "\033[32;1mreceived\033[0m"
 		} else {
-			fmt.Fprint(v, " - \033[33;1mYou\033[0m(\033[31;1mnot received\033[0m) - "+formats.FormatTime(&m.CreationTime)+"\n")
+			recText = "\033[31;1mnot received\033[0m"
 		}
+		fmt.Fprint(v, " - \033[33;1mYou\033[0m("+recText+") - "+date+"\n")
 	} else {
-		fmt.Fprint(v, " - \033[33;1m"+c.ReportedName+"\033[0m - "+formats.FormatTime(&m.CreationTime)+"\n")
+		fmt.Fprint(v, " - \033[33;1m"+c.ReportedName+"\033[0m - "+date+"\n")
 	}
 
-	fmt.Fprint(v, " - "+m.Text+"\n")
-	fmt.Fprint(v, " ------------- \n")
+	for _, s := range strings.Split(m.Text, "\n") {
+		fmt.Fprint(v, "  "+s+"\n")
+	}
+
+	//fmt.Fprint(v, " ------------- \n")
 }
 
 func (w *Window) printMessages(c *contact.Contact) {
@@ -535,8 +548,6 @@ func (w *Window) rebuildContacts() {
 			} else {
 				fmt.Fprint(v, " "+cline+"\n")
 			}
-			//сравнить с c.LastViewedMessageId
-			//если сообщений больше то показать цифру непрочитанных сообщений
 		}
 
 		return nil
@@ -560,32 +571,15 @@ func (w *Window) updateTitle() {
 }
 
 func (w *Window) rebuildTitle() {
-	// u, err := user.Load(app.Zvart.Db)
-	// if err != nil {
-	// 	return
-	// }
 	w.G.Update(func(g2 *gocui.Gui) error {
-
-		// s := app.Zvart.GetStatus()
-		w.status.Notes(app.Zvart.Notifications)
+		if len(app.Zvart.Notifications) > 0 {
+			w.status.Set(<-app.Zvart.Notifications, 20)
+		}
 		t, _ := g2.View(titleView)
 		t.Clear()
 		fmt.Fprintf(t, " Zvart %s | %s",
 			app.Version,
 			w.status.Get())
-		// if s == "" {
-		//
-		// } else {
-		// 	fmt.Fprintf(t, " Zvart %s | %s | Error: %s",
-		// 		app.Version,
-		// 		u.Name,
-		// 		s)
-		// }
-
-		// t2, _ := g2.View(actLogView)
-		// t2.Clear()
-		// fmt.Fprint(t2, w.status.Get())
-
 		return nil
 	})
 }

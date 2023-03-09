@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	Version = "0.0.3 alpha"
+	Version = "0.0.4 alpha"
 )
 
 type app struct {
@@ -37,7 +37,7 @@ func (a *app) AddNewContact(link, himessage string) {
 func (a *app) SendTextTo(index uint64, mes []string) {
 	text := ""
 	for _, s := range mes {
-		text += s
+		text += s + "\n"
 	}
 	c, err := contact.Load(a.Db, index)
 	if err != nil {

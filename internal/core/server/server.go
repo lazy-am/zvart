@@ -81,7 +81,8 @@ func (s *Server) checkContacts() {
 		}
 		if c.PubKey != nil &&
 			c.FirstUnsentMessageId != nil &&
-			(int(time.Since(c.LastTryTime).Seconds()) > secBetweenConnectionAttempts) {
+			((int(time.Since(c.LastTryTime).Seconds()) > secBetweenConnectionAttempts) ||
+				(int(time.Since(c.LastCallTime).Seconds()) < secBetweenConnectionAttempts)) {
 			go s.sendMessages(c)
 		}
 	}

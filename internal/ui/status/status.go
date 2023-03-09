@@ -9,18 +9,14 @@ type Status struct {
 	tempStDurSec int
 	needCalc     bool
 	Rebuild      chan bool
-
-	lastNotes time.Time
-	notesDur  int
 }
 
 func Build(def string) *Status {
 	r := make(chan bool, 2)
 	r <- true
 	return &Status{defStatus: def,
-		needCalc:  false,
-		Rebuild:   r,
-		lastNotes: time.Now()}
+		needCalc: false,
+		Rebuild:  r}
 }
 
 func (s *Status) Get() string {
@@ -37,12 +33,4 @@ func (s *Status) Set(st string, durSec int) {
 	s.tempStDurSec = durSec
 	s.tempStTime = time.Now()
 	s.Rebuild <- true
-}
-
-func (s *Status) Notes(notes <-chan string) {
-	if (len(notes) > 0) && int(time.Now().Sub(s.lastNotes).Seconds()) < s.notesDur {
-		st := <-notes
-		s.Set(st, s.notesDur)
-		s.lastNotes = time.Now()
-	}
 }

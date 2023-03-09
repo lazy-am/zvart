@@ -3,12 +3,25 @@ package formats
 import "time"
 
 func FormatTime(t *time.Time) string {
-	eptytime := time.Time{}
-	ft := t.Format("02-01-06 15:04:05")
-	if t.Compare(eptytime) == 0 {
-		ft = "---"
+	emptytime := time.Time{}
+	var r string
+	if t.Compare(emptytime) == 0 {
+		r = "---"
+	} else {
+		r = t.Format("02-01-06 15:04:05")
 	}
-	return ft
+	return r
+}
+
+func FormatTimeShort(t *time.Time) string {
+	emptytime := time.Time{}
+	var r string
+	if t.Compare(emptytime) == 0 {
+		r = "---"
+	} else {
+		r = t.Format("15:04:05")
+	}
+	return r
 }
 
 func FormatKey(k string) string {
