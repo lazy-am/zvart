@@ -5,11 +5,11 @@ zvart
 
 ## Idea
 
-Create an easy-to-use tool to use the tor network (and hopefully i2p) for private, decentralized chatting
+Create an easy-to-use tool to use the tor network for private, decentralized chatting
 
-## Why is this needed?
+## Similar programs
 
-Sadly, there is no easy-to-use way to privately messenger over the tor network. The nearest analogue [OnionShare](https://github.com/onionshare/onionshare) can not be used for this (chats there do not have any protection and will be compromised at the first open transfer link through a social network, the link to the chat is not saved between runs and much more problems). I don't know of any other programs that are similar, but if you do, please contact me.
+[Cwtch](https://cwtch.im/download/)
 
 ## Privacy
 
@@ -29,18 +29,6 @@ Weak optimization of the database and network. Weak resistance to attacks.
 * [gocui](https://github.com/jroimartin/gocui) to display the console
 * [bine](https://github.com/cretz/bine) for communicating with tor
 * [oto](https://github.com/hajimehoshi/oto) for playing sounds
-
-### Roadmap
-
-* ~~Add sound effects to chat events~~
-* Basic functions (delete contacts, change password)
-* File transfer
-* Make a multilingual interface
-* Anti ddos protection
-* Working via i2p in addition to tor
-* Implement "channels." Informational chats in which only the author can write.
-* Implement auto-updating
-* Make an alternative user interface in the browser
 
 ### limitations
 
@@ -97,12 +85,7 @@ Instead of symbols `<>` insert a link (directly in the program use `CTRL + V` to
 ### Commands:
 
 * `:nc {link} {message}` create a contact from a tor `{link}` with `{message}`
-
-## How to help
-
-* Translation - if you see errors in the translation of the interface or want to help translate the program into your language, then contact me in any way
-* Programming - help with fixes and implementation of new features
-* Promotion - if you like the idea of the program - share this program on social media.
+* `:clear` delete all messages in the selected chat room
 
 ## Contacts
 

@@ -16,6 +16,7 @@ type contactStorage interface {
 	Get(table []byte, subtable []byte, key []byte) ([]byte, error)
 	GetNextId(table []byte, subtable []byte) ([]byte, error)
 	CreateTable(table, subtable []byte) error
+	ClearTable(table, subtable []byte) error
 	LoadList(table []byte, subtable []byte) (map[uint64][]byte, error)
 	LoadListFromId(table []byte, subtable []byte, id []byte) (map[uint64][]byte, error)
 }
@@ -266,4 +267,31 @@ func (c *Contact) Equal(cont *Contact) bool {
 		return true
 	}
 	return false
+}
+
+func (c *Contact) ClearMessages(db contactStorage, outerror chan error) error {
+	go func() {
+		for c.ServerWork {
+			var err error
+			time.Sleep(time.Second)
+			c, err = Load(db, binary.LittleEndian.Uint64(c.dbKey))
+			if err != nil {
+				outerror <- err
+				return
+			}
+		}
+		if err := db.ClearTable([]byte(messTableName), c.DbMessagesTableName); err != nil {
+			outerror <- err
+			return
+		}
+		c.NeedUpdateGuiInfo = true
+		b := make([]byte, 8)
+		binary.LittleEndian.PutUint64(b, 0)
+		c.FirstUnsentMessageId = b
+		c.LastViewedMessageId = b
+		if err := c.Save(db); err != nil {
+			outerror <- err
+		}
+	}()
+	return nil
 }

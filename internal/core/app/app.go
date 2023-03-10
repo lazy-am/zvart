@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/lazy-am/zvart/internal/core/contact"
@@ -16,43 +17,42 @@ const (
 )
 
 type app struct {
-	Db            storage.Storage
-	Tor           *torl.Torlancher
-	Server        *server.Server
-	Clipboard     bool
-	Notifications chan string
-	Sound         *sound.AppSound
+	Db          storage.Storage
+	Tor         *torl.Torlancher
+	Server      *server.Server
+	Clipboard   bool
+	Sound       *sound.AppSound
+	ErrorNotice chan error
 }
 
 var Zvart app
 
-func (a *app) AddNewContact(link, himessage string) {
+func (a *app) AddNewContact(link, himessage string) error {
 	_, err := contact.NewFromLink(link, himessage, a.Db)
 	if err != nil {
-		a.Notifications <- err.Error()
-		return
+		return err
 	}
+	return nil
 }
 
-func (a *app) SendTextTo(index uint64, mes []string) {
+func (a *app) SendTextTo(index uint64, mes []string) error {
 	text := ""
 	for _, s := range mes {
 		text += s + "\n"
 	}
 	c, err := contact.Load(a.Db, index)
 	if err != nil {
-		a.Notifications <- err.Error()
-		return
+		return errors.New("no contact selected")
 	}
 	m, err := tmes.Create(a.Db, c.DbMessagesTableName, text)
 	if err != nil {
-		a.Notifications <- err.Error()
-		return
+		return err
 	}
 	if c.FirstUnsentMessageId == nil {
 		c.FirstUnsentMessageId = m.GetDBkey()
 		c.Save(a.Db)
 	}
+	return nil
 }
 
 func (a *app) GetStatus() string {

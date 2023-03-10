@@ -192,22 +192,6 @@ func (w *Window) keybindings() error {
 		return err
 	}
 
-	// err = w.G.SetKeybinding(mesEdtView, //
-	// 	gocui.MouseLeft,
-	// 	gocui.ModNone,
-	// 	func(g *gocui.Gui, v *gocui.View) error {
-	// 		w.G.SetCurrentView(messageEdit)
-	// 		return nil
-	// 	})
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = g.SetKeybinding("main", gocui.KeyCtrlV, gocui.ModNone, print_help)
-	// if err != nil {
-	// 	return err
-	// }
-
 	err = w.G.SetKeybinding(mesListView, gocui.MouseWheelUp, gocui.ModNone, w.up)
 	if err != nil {
 		return err
@@ -254,16 +238,25 @@ func (w *Window) sendClick(g *gocui.Gui, v *gocui.View) error {
 		}
 
 		if fs := finalLines[0]; fs[0] == ':' && len(finalLines) == 1 {
-			app.CmdDecode(fs)
+			if err := app.Zvart.CmdApply(fs, w.activeContact); err != nil {
+				w.status.Set("Command error: "+err.Error(), 10)
+			} else {
+				edit.Clear()
+				edit.SetCursor(0, 0)
+			}
 		} else {
 			if w.activeContact == -1 {
+				w.status.Set("No contact selected", 10)
 				return nil
 			}
-			app.Zvart.SendTextTo(uint64(w.activeContact), finalLines)
+			if err := app.Zvart.SendTextTo(uint64(w.activeContact), finalLines); err != nil {
+				w.status.Set("Send text error: "+err.Error(), 10)
+			} else {
+				edit.Clear()
+				edit.SetCursor(0, 0)
+			}
 		}
 
-		edit.Clear()
-		edit.SetCursor(0, 0)
 		return nil
 
 	})
@@ -571,10 +564,10 @@ func (w *Window) updateTitle() {
 }
 
 func (w *Window) rebuildTitle() {
+	if len(app.Zvart.ErrorNotice) > 0 {
+		w.status.Set((<-app.Zvart.ErrorNotice).Error(), 10)
+	}
 	w.G.Update(func(g2 *gocui.Gui) error {
-		if len(app.Zvart.Notifications) > 0 {
-			w.status.Set(<-app.Zvart.Notifications, 20)
-		}
 		t, _ := g2.View(titleView)
 		t.Clear()
 		fmt.Fprintf(t, " Zvart %s | %s",

@@ -84,9 +84,6 @@ func (s *Server) registSender(c *contact.Contact) error {
 			c.PubKeySended = true
 			c.LastCallTime = time.Now()
 			c.NeedUpdateGuiInfo = true
-			if s.player != nil {
-				s.player.PlaySound1()
-			}
 		}
 
 	}

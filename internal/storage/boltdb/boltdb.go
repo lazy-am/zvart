@@ -216,6 +216,35 @@ func (db *db) GetNextId(table []byte, subtable []byte) ([]byte, error) {
 	return buf, err
 }
 
+func (db *db) ClearTable(table, subtable []byte) error {
+	if db.Err != nil {
+		return db.Err
+	}
+	err := db.Bolt.Update(func(tx *bolt.Tx) error {
+
+		if subtable == nil {
+			err := tx.DeleteBucket(table)
+			if err != nil {
+				return err
+			}
+		} else {
+			b := tx.Bucket(table)
+			if b == nil {
+				return fmt.Errorf("bucket %s return nil", string(table))
+			}
+			err := b.DeleteBucket(subtable)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return db.CreateTable(table, subtable)
+}
+
 func (db *db) CreateTable(table, subtable []byte) error {
 	if db.Err != nil {
 		return db.Err

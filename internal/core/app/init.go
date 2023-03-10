@@ -18,12 +18,12 @@ import (
 
 func init() {
 	Zvart = app{}
-	Zvart.Notifications = make(chan string, 10)
 	Zvart.Clipboard = true
 	err := clipboard.Init()
 	if err != nil {
 		Zvart.Clipboard = false
 	}
+	Zvart.ErrorNotice = make(chan error, 1)
 }
 
 // Initialize storage at the beginning of the database opening dialog

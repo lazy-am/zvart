@@ -18,6 +18,7 @@ type Storage interface {
 	Get(table []byte, subtable []byte, key []byte) ([]byte, error)
 	GetNextId(table []byte, subtable []byte) ([]byte, error)
 	CreateTable(table, subtable []byte) error
+	ClearTable(table, subtable []byte) error
 	LoadList(table []byte, subtable []byte) (map[uint64][]byte, error)
 	LoadListFromId(table []byte, subtable []byte, id []byte) (map[uint64][]byte, error)
 	LoadLast(table []byte, subtable []byte, count uint64) (lst map[uint64][]byte, startIndex uint64, er error)
