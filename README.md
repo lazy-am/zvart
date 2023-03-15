@@ -30,7 +30,7 @@ Weak optimization of the database and network. Weak resistance to attacks.
 * [bine](https://github.com/cretz/bine) for communicating with tor
 * [oto](https://github.com/hajimehoshi/oto) for playing sounds
 
-### limitations
+### Limitations
 
 * A message over a tor network can take a long time (about one minute)
 * The message can be sent only if your contact is online
@@ -38,12 +38,9 @@ Weak optimization of the database and network. Weak resistance to attacks.
 
 ## Getting Started
 
-### Installing
-
-Download and unpack the program build.
-Run `zvart.exe` on Windows and `zvart` on Linux.
-
 ### Tor setup
+
+The program contains a Tor that is up to date at the time of build. You can use your tor by passing its location via startup parameters (run zvart -h to read more)
 
 If the Tor network is blocked in your country, you will need to set up bridges.
 Open file `tor/torrc` and add the following lines to the end of the file
@@ -54,7 +51,23 @@ Bridge <>
 Bridge <>
 ```
 
-Instead of <> symbols, insert the bridge string obtained from the https://bridges.torproject.org/options/ website. Note that the current version does not support obfs4 bridges on linux.
+Instead of <> symbols, insert the bridge string obtained from the https://bridges.torproject.org/options/ website. Note that the current version of TOR that comes with the program does not support obfs4 bridging in linux.
+
+### Installing
+
+Download and unpack the program build.
+On linux, make files `zvart` and `tor/tor/tor` executable. For example via the terminal in the root zvart folder:
+
+```
+chmod u+x ./zvart
+chmod u+x ./tor/tor/tor
+```
+
+Run `zvart.exe` on Windows or on Linux type in console:
+
+```
+./zvart
+```
 
 ### Sign up
 
@@ -86,6 +99,26 @@ Instead of symbols `<>` insert a link (directly in the program use `CTRL + V` to
 
 * `:nc {link} {message}` create a contact from a tor `{link}` with `{message}`
 * `:clear` delete all messages in the selected chat room
+
+## Building from source
+
+In the simplest case on Windows
+
+```go build -o zvart.exe cmd/zvartconsole/main.go```
+
+On Linux
+
+```go build -o zvart cmd/zvartconsole/main.go```
+
+To build a debug version
+
+```go build -gcflags=all="-N -l" -o zvart cmd/zvartconsole/main.go```
+
+Your build will sometimes have the output of a Tor application in the strangest place. To remove this, create a `vendor` folder and in the `vendor/github.com/cretz/bine/process/process.go` file comment out line number 50 with the contents
+
+```
+//cmd.Stdout = os.Stdout
+```
 
 ## Contacts
 
